@@ -72,24 +72,38 @@ class Create_2_MTACreate(ScopedVisitor):
 
         if cr.extras.has_attr('exclusive'):
             allocinsn = 'allocate/x'
+            allocrinsn = 'allocate/rx'#ft
         elif lc.target_next is None:
             if cr.extras.has_attr('nowait'):
                 warn("this create may fail and no alternative is available", cr)
                 allocinsn = 'allocate'
+                allocrinsn = 'allocate/r'#ft
             else:
                 allocinsn = 'allocate/s'
+                allocrinsn = 'allocate/rs'#ft
         else:
             if cr.extras.has_attr('forcewait'):
                 allocinsn = 'allocate/s'
+                allocrinsn = 'allocate/rs'#ft
             else:
                 allocinsn = 'allocate'
+                allocrinsn = 'allocate/r'#ft
 
         strategyuse = CVarUse(cr.cvar_strategy)
 
+        rfidvar = CVarDecl(loc = cr.loc, name = "C$RF$%s" % lbl, ctype = "long")
+        self.cur_scope.decls += rfidvar
+        rfidvar = CVarUse(decl = rfidvar)
+
+
         newbl += (flatten(cr.loc,
-                          '__asm__ __volatile__("%s %%2, %%1, %%0\\t# MT: CREATE %s"'
-                          ' : "=r"(' % (allocinsn, lbl)) + 
-                  usefvar + ') : "rI"(' + strategyuse + '), "r"(' + CVarUse(decl = cr.cvar_place) + '));')
+                          """__asm__ __volatile__("%(allocinsn)s %%3, %%2, %%0;" 
+                                                  "%(allocrinsn)s %%3, %%2, %%1;"
+                                                  "pair %%0, %%1;"
+                                                  "pair %%1, %%0;"
+                                                  "rmtwr %%1 \\t# MT: CREATE %(lbl)s" """ % locals()) + 
+                                                ' : "=r"( ' + usefvar + '), "=r"( ' + rfidvar + ')' +
+                                                ' : "rI"(' + strategyuse + '), "r"(' + CVarUse(decl = cr.cvar_place) + '));')
         
         if lc.target_next is not None:
             newbl += (flatten(cr.loc, ' if (!__builtin_expect(!!(') + 
