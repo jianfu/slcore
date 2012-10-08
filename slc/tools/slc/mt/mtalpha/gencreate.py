@@ -102,8 +102,8 @@ class Create_2_MTACreate(ScopedVisitor):
                                                   "pair %%0, %%1;"
                                                   "pair %%1, %%0;"
                                                   "rmtwr %%1 \\t# MT: CREATE %(lbl)s" """ % locals()) + 
-                                                ' : "=r"( ' + usefvar + '), "=r"( ' + rfidvar + ')' +
-                                                ' : "rI"(' + strategyuse + '), "r"(' + CVarUse(decl = cr.cvar_place) + '));')
+                                                ' : "=r&"( ' + usefvar + '), "=r"( ' + rfidvar + ')' +
+												' : "rI"(' + strategyuse + '), "r"(' + CVarUse(decl = cr.cvar_place) + '));')
         
         if lc.target_next is not None:
             newbl += (flatten(cr.loc, ' if (!__builtin_expect(!!(') + 
