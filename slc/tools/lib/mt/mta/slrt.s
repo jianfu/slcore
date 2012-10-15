@@ -38,35 +38,51 @@ _start:
         ldq $l5, environ($l5)     !gprellow
 
 	# call main()
-    ldq $l14, main($l17)  !literal
+	ldq $l14, main($l17)  !literal
 	ldq $l13, __mt_main($l17) !literal
 	
-
-	allocate $31, 3, $l1
-	allocate/r $31, 3, $l2
-	pair $l1, $l2
-	pair $l2, $l1
-	rmtwr $l2
+	mov 1, $l1
+	allocate $l1, 3, $l1
+    
+	mov 3, $l2
+	allocate $l2, 3, $l2
 	
-
 	crei $l1, 0($l13)
+	crei $l2, 0($l13)
 	
 	puts $l14, $l1, 0
 	putg $l5, $l1, 0
 	putg $l6, $l1, 1
 	putg $l7, $l1, 2
 
-	sync $l1, $l2
-	mov $l2, $l2
+	puts $l14, $l2, 0
+	putg $l5, $l2, 0
+	putg $l6, $l2, 1
+	putg $l7, $l2, 2
+
+
+	sync $l1, $l3
+	mov $l3, $l3
+
+	sync $l2, $l4
+	mov $l4, $l4
 	
-	gets $l1, 0, $l2
-	mov $l2, $l2
+	gets $l1, 0, $l3
+	mov $l3, $l3
+
+	gets $l2, 0, $l4
+	mov $l4, $l4
 	
 	detach $l1
-
-	mov $l2, $l1
-	bne $l1, $bad
-        nop
+	detach $l2
+	
+	mov $l3, $l1
+	beq $l1, $bad1
+	mov $l4, $l2
+	bne $l2, $bad
+	
+$bad1:
+	nop
 	end
 $bad:
 	ldah $l3, $msg($l17) !gprelhigh
