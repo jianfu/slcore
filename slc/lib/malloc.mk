@@ -2,15 +2,13 @@ noinst_LIBRARIES += \
 	libmalloc.a \
 	libmalloc_debug.a
 
-pkglib_DATA += \
+sllib_DATA += \
 	$(libmalloc_a_OBJECTS) \
 	$(libmalloc_debug_a_OBJECTS)
 
 MALLOC_DEFS = \
-	-DLACKS_SYS_TYPES_H \
 	-DUSE_DL_PREFIX \
 	-DHAVE_MMAP=0 \
-	-DMORECORE_CANNOT_TRIM \
 	-DMALLOC_FAILURE_ACTION="" \
 	-DLACKS_UNISTD_H \
 	-DUSE_BUILTIN_FFS=1 \

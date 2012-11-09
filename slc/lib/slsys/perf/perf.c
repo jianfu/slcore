@@ -46,6 +46,9 @@ const char* mtperf_counter_names[] = {
     "notused4",
     "n_cl_loads_ext",
     "n_cl_stores_ext",
+    "n_cr_threads",
+    "n_cr_families",
+    "core_clocks",
 // computed columns
     "pl_eff",
     "tt_occp",
@@ -281,7 +284,7 @@ void mtperf_report_intervals(const struct s_interval* ivs,
                 pf(mtperf_compute_extra(ivs[j].before, ivs[j].after, i));
             }                
             if (print_headers) {
-                if (i) pc(sep);
+                pc(sep);
                 pc('"');
                 if (ivs[j].num >= 0) { pn(ivs[j].num); pc(' '); }
                 ps(ivs[j].tag ? ivs[j].tag : "(anon)");

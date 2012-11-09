@@ -1,3 +1,422 @@
+2012-11-05  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Packaging fix.
+
+	* build-aux/mgsim.m4: Use `AC_PATH_PROGS' to try out multiple
+	candidate program names.
+
+2012-11-02  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Packaging fixes.
+
+	* tools/lib.mk (distclean-local): Avoid recursing into `lib' since
+	Automake does it already based on DIST_SUBDIRS.
+
+	* lib/common.mk (nobase_dist_sllib_DATA): New variable.
+	* lib/mipsel-sim/Makefile.am (nobase_dist_sllib_DATA): Use it to
+	also distribute `libgcc.a'.
+
+	* lib/mipsel-sim/mipselmathobjs.mk (EXTRA_DIST): Ensure that
+	`$(MIPSELMATHOBJS)' gets distributed.
+
+	* lib/mgos/tlsmalloc/Makefile.am (EXTRA_DIST): Also distribute
+	`tls_arch_mipsel_sim.h'.
+
+2012-11-02  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Adapt the `arggen' MT machine profile for use with MGSim 3.3.
+
+	* tools/mt-profiles/arggen: use the new device names in overrides.
+
+2012-11-02  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Fix the `output_*' interfaces on MT targets.
+
+	* tools/include/svp/testoutput.h: Place a compiler memory barrier
+	after each output to prevent the compiler from reordering writes
+	to separate memory addresses.
+
+2012-11-02  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Fix `output_char' on MT targets.
+
+	* tools/include/svp/testoutput.h (output_char): Ensure that bytes
+	are written to the debug output as full words, to ensure
+	compatibility regardless of endianness.
+
+2012-11-02  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Minor packaging fix.
+
+	* bootstrap: Avoid forcing Automake 1.11, since 1.12 is now out.
+
+2012-11-02  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Update the automatic configuration to recognize the latest MGSim naming.
+
+	* build-aux/mgsim.m4: Recognize/detect the names `mtalpha-mgsim', etc.
+
+2012-10-21  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Synchronize library support with MGSim 3.3.
+
+	* lib/mgos/mgsim/mgsim.h: Import from MGSim 3.3. This extends the
+	ASR/APR support to MIPS.
+
+2012-10-21  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Provide library support for MIPSel.
+
+	* lib/mipsel-sim/libgcc.a: Import from GCC 4.7.1. This was built by
+	configuring gcc for `mipsel-linux-gnu', then manually editing
+	`mipsel-linux-gnu/libgcc/Makefile' in the build tree to use `slc
+	-b mipsel_s' as code generator.
+
+	* lib/libc/math/mipsel/acosf.o, lib/libc/math/mipsel/acoshf.o,
+	lib/libc/math/mipsel/asinf.o, lib/libc/math/mipsel/asinhf.o,
+	lib/libc/math/mipsel/atan2f.o, lib/libc/math/mipsel/atanf.o,
+	lib/libc/math/mipsel/atanhf.o, lib/libc/math/mipsel/cabsf.o,
+	lib/libc/math/mipsel/carg.o, lib/libc/math/mipsel/cargf.o,
+	lib/libc/math/mipsel/cbrtf.o, lib/libc/math/mipsel/ceilf.o,
+	lib/libc/math/mipsel/copysignf.o, lib/libc/math/mipsel/cosf.o,
+	lib/libc/math/mipsel/coshf.o, lib/libc/math/mipsel/e_acos.o,
+	lib/libc/math/mipsel/e_acosh.o, lib/libc/math/mipsel/e_asin.o,
+	lib/libc/math/mipsel/e_atan2.o, lib/libc/math/mipsel/e_atanh.o,
+	lib/libc/math/mipsel/e_cosh.o, lib/libc/math/mipsel/e_exp.o,
+	lib/libc/math/mipsel/e_fmod.o, lib/libc/math/mipsel/e_gamma.o,
+	lib/libc/math/mipsel/e_gamma_r.o, lib/libc/math/mipsel/e_hypot.o,
+	lib/libc/math/mipsel/e_j0.o, lib/libc/math/mipsel/e_j1.o,
+	lib/libc/math/mipsel/e_jn.o, lib/libc/math/mipsel/e_lgamma.o,
+	lib/libc/math/mipsel/e_lgamma_r.o, lib/libc/math/mipsel/e_log.o,
+	lib/libc/math/mipsel/e_log10.o, lib/libc/math/mipsel/e_log2.o,
+	lib/libc/math/mipsel/e_pow.o, lib/libc/math/mipsel/e_rem_pio2.o,
+	lib/libc/math/mipsel/e_remainder.o,
+	lib/libc/math/mipsel/e_scalb.o, lib/libc/math/mipsel/e_sinh.o,
+	lib/libc/math/mipsel/e_sqrt.o, lib/libc/math/mipsel/erfcf.o,
+	lib/libc/math/mipsel/erff.o, lib/libc/math/mipsel/exp2f.o,
+	lib/libc/math/mipsel/expf.o, lib/libc/math/mipsel/expm1f.o,
+	lib/libc/math/mipsel/fabsf.o, lib/libc/math/mipsel/fdimf.o,
+	lib/libc/math/mipsel/floorf.o, lib/libc/math/mipsel/fmaf.o,
+	lib/libc/math/mipsel/fmaxf.o, lib/libc/math/mipsel/fminf.o,
+	lib/libc/math/mipsel/fmodf.o, lib/libc/math/mipsel/frexpf.o,
+	lib/libc/math/mipsel/hypotf.o, lib/libc/math/mipsel/ilogbf.o,
+	lib/libc/math/mipsel/k_cos.o, lib/libc/math/mipsel/k_rem_pio2.o,
+	lib/libc/math/mipsel/k_sin.o, lib/libc/math/mipsel/k_standard.o,
+	lib/libc/math/mipsel/k_tan.o, lib/libc/math/mipsel/ldexpf.o,
+	lib/libc/math/mipsel/lgammaf.o, lib/libc/math/mipsel/llrintf.o,
+	lib/libc/math/mipsel/llroundf.o, lib/libc/math/mipsel/log10f.o,
+	lib/libc/math/mipsel/log1pf.o, lib/libc/math/mipsel/log2f.o,
+	lib/libc/math/mipsel/logbf.o, lib/libc/math/mipsel/logf.o,
+	lib/libc/math/mipsel/lrintf.o, lib/libc/math/mipsel/lroundf.o,
+	lib/libc/math/mipsel/modff.o, lib/libc/math/mipsel/nan.o,
+	lib/libc/math/mipsel/nearbyintf.o,
+	lib/libc/math/mipsel/nextafterf.o, lib/libc/math/mipsel/powf.o,
+	lib/libc/math/mipsel/remainderf.o, lib/libc/math/mipsel/remquof.o,
+	lib/libc/math/mipsel/rintf.o, lib/libc/math/mipsel/roundf.o,
+	lib/libc/math/mipsel/s_asinh.o, lib/libc/math/mipsel/s_atan.o,
+	lib/libc/math/mipsel/s_cbrt.o, lib/libc/math/mipsel/s_ceil.o,
+	lib/libc/math/mipsel/s_copysign.o, lib/libc/math/mipsel/s_cos.o,
+	lib/libc/math/mipsel/s_erf.o, lib/libc/math/mipsel/s_expm1.o,
+	lib/libc/math/mipsel/s_fabs.o, lib/libc/math/mipsel/s_fdim.o,
+	lib/libc/math/mipsel/s_finite.o, lib/libc/math/mipsel/s_finitef.o,
+	lib/libc/math/mipsel/s_floor.o, lib/libc/math/mipsel/s_fma.o,
+	lib/libc/math/mipsel/s_fmax.o, lib/libc/math/mipsel/s_fmin.o,
+	lib/libc/math/mipsel/s_fpclassify.o,
+	lib/libc/math/mipsel/s_fpclassifyf.o,
+	lib/libc/math/mipsel/s_frexp.o, lib/libc/math/mipsel/s_ilogb.o,
+	lib/libc/math/mipsel/s_isinf.o, lib/libc/math/mipsel/s_isinff.o,
+	lib/libc/math/mipsel/s_isnan.o, lib/libc/math/mipsel/s_isnanf.o,
+	lib/libc/math/mipsel/s_ldexp.o,
+	lib/libc/math/mipsel/s_lib_version.o,
+	lib/libc/math/mipsel/s_llrint.o, lib/libc/math/mipsel/s_llround.o,
+	lib/libc/math/mipsel/s_log1p.o, lib/libc/math/mipsel/s_logb.o,
+	lib/libc/math/mipsel/s_lrint.o, lib/libc/math/mipsel/s_lround.o,
+	lib/libc/math/mipsel/s_matherr.o, lib/libc/math/mipsel/s_modf.o,
+	lib/libc/math/mipsel/s_nearbyint.o,
+	lib/libc/math/mipsel/s_nextafter.o,
+	lib/libc/math/mipsel/s_remquo.o, lib/libc/math/mipsel/s_rint.o,
+	lib/libc/math/mipsel/s_round.o, lib/libc/math/mipsel/s_scalbln.o,
+	lib/libc/math/mipsel/s_scalbn.o, lib/libc/math/mipsel/s_signbit.o,
+	lib/libc/math/mipsel/s_signbitf.o,
+	lib/libc/math/mipsel/s_signgam.o,
+	lib/libc/math/mipsel/s_significand.o,
+	lib/libc/math/mipsel/s_sin.o, lib/libc/math/mipsel/s_tan.o,
+	lib/libc/math/mipsel/s_tanh.o, lib/libc/math/mipsel/s_trunc.o,
+	lib/libc/math/mipsel/scalblnf.o, lib/libc/math/mipsel/scalbnf.o,
+	lib/libc/math/mipsel/sinf.o, lib/libc/math/mipsel/sinhf.o,
+	lib/libc/math/mipsel/sqrtf.o, lib/libc/math/mipsel/tanf.o,
+	lib/libc/math/mipsel/tanhf.o, lib/libc/math/mipsel/tgammaf.o,
+	lib/libc/math/mipsel/truncf.o, lib/libc/math/mipsel/w_acos.o,
+	lib/libc/math/mipsel/w_acosh.o, lib/libc/math/mipsel/w_asin.o,
+	lib/libc/math/mipsel/w_atan2.o, lib/libc/math/mipsel/w_atanh.o,
+	lib/libc/math/mipsel/w_cabs.o, lib/libc/math/mipsel/w_cosh.o,
+	lib/libc/math/mipsel/w_drem.o, lib/libc/math/mipsel/w_exp.o,
+	lib/libc/math/mipsel/w_exp2.o, lib/libc/math/mipsel/w_fmod.o,
+	lib/libc/math/mipsel/w_gamma.o, lib/libc/math/mipsel/w_hypot.o,
+	lib/libc/math/mipsel/w_j0.o, lib/libc/math/mipsel/w_j1.o,
+	lib/libc/math/mipsel/w_jn.o, lib/libc/math/mipsel/w_lgamma.o,
+	lib/libc/math/mipsel/w_lgamma_r.o, lib/libc/math/mipsel/w_log.o,
+	lib/libc/math/mipsel/w_log10.o, lib/libc/math/mipsel/w_log2.o,
+	lib/libc/math/mipsel/w_pow.o, lib/libc/math/mipsel/w_remainder.o,
+	lib/libc/math/mipsel/w_sinh.o, lib/libc/math/mipsel/w_sqrt.o,
+	lib/libc/math/mipsel/w_tgamma.o: Import from uCLibc 0.9.30.1. This
+	was built by configuring uClibc for the `mips' architecture, MIPS
+	I ISA, Little Endian, O32 ABI, with FP support, but no MMU. Then
+	the file `Rules.mak' was manually modified to set `CC' to `slc -b
+	mipsel_s'.
+
+	* doc/README.rst: Report the new precompiled binaries (math
+	objects and libgcc.a).
+
+	* lib/mipsel-sim/mipselmathobjs.mk: List the new files.
+
+	* lib/common.mk: Predefine `nobase_sllib_DATA'.
+
+	* lib/mtalpha-sim/Makefile.am: Copy to...
+	* lib/mipsel-sim/Makefile.am: ...here. Define library support only
+	for `seq_naked' code generation. Use the MIPS math objects for
+	`libm'. List and install `libgcc.a'.
+
+	* lib/libc/bsd/libc/include/fpmath.h,
+	* lib/libc/bsd/libc/stdio/vfprintf.c,
+	* lib/mgos/posix-compat/heap.c,
+	* lib/libc/include/limits.h,
+	* lib/libc/include/stddef.h,
+	* lib/libc/include/stdint.h,
+	* lib/libc/malloc/mtmalloc.h: Extend the preprocessor conditionals
+	to `__mips__'.
+
+	* lib/libc/include/time.h: Also support MIPS. Use the MGSim
+	performance counters to support clock() since MIPS I does not
+	define a TSC natively.
+
+	* lib/mgos/tlsmalloc/tls_arch_mtalpha_sim.h: Copy to...
+	* lib/mgos/tlsmalloc/tls_arch_mipsel_sim.h: ... here.
+
+	* lib/mgos/tlsmalloc/tls_arch_mipsel_sim.h,
+	* lib/mgos/tlstack_malloc.c: Also support MIPS. Use the `mfc2'
+	instruction directly for ldbp/ldfp since we don't use a modified
+	assembler yet.
+	* lib/mipsel-sim/Makefile.am: Use it to build the `tlsmalloc' code.
+
+	* lib/mgos/uart/mtuart.c: Use `move' to drain a waiting register
+	on MIPS, because the GNU assembler for MIPS does not support the
+	alias `mov'.
+
+	* lib/configure.ac,
+	* lib/Makefile.am: Recurse into `mipsel-sim' if configured.
+
+2012-10-21  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Provide tool support for MIPSel.
+
+	We support only sequential code for now.
+
+	* tools/bin/Makefile.am: Forward the tool configuration to `cce'.
+
+	* tools/bin/cce.in: Configure tool chain to generate MIPS code
+	with tag `spr-seq_naked-mipsel-sim' (shorthand `mipsel_s').
+
+	* tools/include/svp/compiler.h: Do not use `swch' for `nop' with
+	MIPS targets, since we don't use a modified assembler yet.
+
+	* tools/include/svp/delegate.h: Use the `mfc2' instruction
+	directly for getpid/getcid, since we don't use a modified
+	assembler yet.
+
+	* tools/lib/mt/mipsel/slrt.s: New.
+	* tools/lib/mipsel-sim/Makefile.am: New.
+
+	* tools/lib/Makefile.am,
+	* tools/lib/configure.ac: Also recurse in `mipsel-sim' if
+	configured.
+
+	* tools/runscripts.mk: Generate a new script `r-mipsel-sim'.
+
+	* tools/slc/mt/mipsel/__init__.py: New.
+	* tools/slc/mt/mipsel/regdefs.py: New; do not define any MT magic for now.
+	* tools/slc/mt/mipsel/asmproc/__init__.py: New.
+
+	* tools/slc/mt/mtsparc/asmproc/base.py,
+	* tools/slc/mt/mtsparc/asmproc/common.py,
+	* tools/slc/mt/mtsparc/asmproc/opt.py: Copy to...
+
+	* tools/slc/mt/mipsel/asmproc/base.py,
+	* tools/slc/mt/mipsel/asmproc/common.py,
+	* tools/slc/mt/mipsel/asmproc/opt.py: ... here. Remove all the
+	assembly massaging code for now. Note that MIPS assembly uses
+	'.type NAME, @function' instead of '.type NAME, #function' as in
+	SPARC.
+
+	* tools/slc/mt/mipsel/asmproc/opt.py (noreorder): Replace all
+	occurrences of '.set reorder' by `.set noreorder' because
+	otherwise the assembler would pull instructions in the delay slot
+	of branches.
+
+	* tools/slc.mk: List the new files.
+
+2012-10-21  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Provide infrastructure to support MIPSel compatibility.
+
+	* build-aux/mgbinutils.m4: Detect ar, ranlib and nm for mipsel-linux-gnu.
+	* build-aux/mgsim.m4: Detect mgsim for mipsel.
+	* build-aux/slc.m4: Detect gcc for mipsel-linux-gnu; support a new
+	flag --enable-mipsel.
+	* configure.ac: Determine whether MIPSel is supported based on detected tools.
+
+	* build-aux/slctests.m4: Provide a new Automake conditional
+	ENABLE_CHECK_SPR_MIPSEL.
+
+2012-10-21  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Enhance the heap memory manager and fix a long-standing bug.
+
+	Multiple changes packaged in one commit:
+
+	- enable use of the MGSim MMU to map/unmap memory pages dynamically.
+
+	- use smaller page sizes to accommodate the MGSim MMU granularity.
+
+	- fix a bug in `sbrk': `sbrk' must return the *previous* brk, not
+	the new one (as per man page). Prior to this patch, with the
+	introduction of dynamic page mapping `malloc' would get an error
+	when it tried to write to the area above the pointer returned to
+	`sbrk'.
+
+	- better accommodate for the MGSim memory address space. This is
+	because the default MGsim configuration places I/O ranges just
+	below the 4GB boundary; with a 10GB heap on MT-Alpha there would
+	be a conflict if heap space directly follows program code.
+	Instead, place the heap base into its own section
+	(`MGOS_HEAPBASE'), then tell the linker to place this either below
+	I/O (on 32-bit targets) or above I/O (on 64-bit targets).
+
+	* lib/mgos/posix-compat/heap.c (PAGESIZE, PAGE_BITS),
+	* lib/mtalpha-sim/Makefile.am (PAGESIZE),
+	* lib/mtsparc-fpga/Makefile.am (PAGESIZE),
+	* lib/mtsparc-sim/Makefile.am (PAGESIZE): Use 4K pages on 32-bit platforms,
+	32K on 64-bit.
+
+	* lib/mgos/posix-compat/heap.c (__heap, brk): When MGSim is
+	targeted, place a 1-byte heap base in the section `MGOS_HEAPBASE',
+	then use the MMU to dynamically map/unmap pages.
+
+	* tools/bin/cce.in: Place the code at 0x1000, and the heap at
+	either 0x40000000 or 0x1000000000 depending on whether the target
+	is 32-bit or 64-bit MGSim.
+
+	* lib/mgos/posix-compat/heap.c (sbrk): Return the old brk, not the
+	new one.
+
+	* lib/malloc.mk: Enable use of `sys/types.h' which now exists; as
+	well as shrinking the HEAP space with `sbrk' and negative
+	increments which we now support.
+
+2012-10-21  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Link with `libgcc.a' if it is configured.
+
+	* tools/bin/cce.in: If `libgcc.a' is present in an SL library
+	directory, then link it in as part of the C standard library.
+
+2012-10-21  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Kill some compiler warnings.
+
+	* lib/mgos/tlsmalloc/tls_arch_mtalpha.h (UNMAP_STORAGE, MAP_STORAGE),
+	* lib/mgos/tlsmalloc/tls_arch_mtsparc.h (UNMAP_STORAGE)
+	(MAP_STORAGE): Cast the pointers before calling `mgsim_control',
+	since it is now a function and the compiler now tries to check
+	types.
+
+2012-10-21  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Extend the performance counter interface to the latest MGSim.
+
+	* lib/slsys/include/svp/perf.h,
+	* lib/slsys/perf/perf.c: Add support for the number of created
+	threads/families and the number of core cycles, as per MGSim 3.3.
+
+2012-10-20  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Align MT code with MGSim 3.3
+
+	* tools/r-mt-sim.sh.in (runner_cmdline): Set boot ROM file name in
+	`rom_boot' instead of `*BootROM'.
+
+	* tools/include/svp/testoutput.h: Use MMIO to the debug channel instead
+	of `mgsim_control'.
+
+	* tools/include/svp/mgsim.h: Use MMIO to the action and MMU interfaces
+	instead of the `print' instruction.
+
+	* tools/lib/mt/mgsim.c,
+	* tools/include/svp/mgsim.h: Remove the `mgsim_outfloat' interface
+	as it was not used anyways.
+
+	* tools/lib/mt/mta/slrt.s,
+	* tools/lib/mt/mts/slrt.s: Use MMIO to the action interface to report
+	main's exit code.
+
+2012-10-20  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Declare `signam' in the embedded `math.h'.
+
+	* lib/libc/include/math.h: Do it.
+
+2012-10-20  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Improve compatibility with the latest Automake versions.
+
+	* build-aux/slctests.mk (SL_LOG_COMPILER): Prefix the command line
+	with `env' since the latest versions of Automake require a command as first
+	word.
+
+2012-10-18  Raphael 'kena' Poss  <r.poss@uva.nl>
+
+	Fix the output formatting in mtperf_report_intervals.
+
+	* lib/slsys/perf/perf.c: Ensure that the first column of the CSV
+	header is separated from the next with a space.
+
+2012-07-30  Raphael 'kena' Poss  <r.c.poss@uva.nl>
+
+	Optimize the MT-Alpha code generation.
+
+	The "create" instruction implies a memory barrier in the MT
+	architecture. However, until this point the compiler would insert
+	an extra barrier just before the instruction in the generated
+	code. This was a vestige of a time where the architecture
+	implementation had not yet implemented the barrier in
+	hardware. This patch removes the unnecessary barrier.
+
+	* tools/slc/mt/mtalpha/gencreate.py
+	(Create_2_MTACreate.visit_lowcreate): Do it.
+
+2012-05-29  Raphael 'kena' Poss  <r.c.poss@uva.nl>
+
+	Fix support for `malloc'.
+
+	* slc/lib/libc.mk: Do not link in `malloc_wrappers' by default, as
+	this will plainly disable the TLS-based `malloc'.
+
+2012-05-29  Raphael 'kena' Poss  <r.c.poss@uva.nl>
+
+	Increase compatibility with the latest Automake.
+
+	* slc/lib/common.mk,
+	* slc/lib/malloc.mk,
+	* slc/lib/tlsmalloc.mk,
+	* slc/tools/lib/common.mk: Avoid using `pkglib_DATA' which is not
+	valid as per Automake 1.11.2/3.
+
+2012-05-29  Raphael 'kena' Poss  <r.c.poss@uva.nl>
+
+	Minor packaging fix.
+
+	* Makefile.am (README, NEWS): Fix the aliasing.
+
 2012-05-25  Irfan Uddin  <mirfanud@gmail.com>
 
 	Fix a bug in the hlsim code generation.

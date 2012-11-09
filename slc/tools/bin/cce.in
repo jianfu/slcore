@@ -39,6 +39,10 @@ CC_MTSPARC=${CC_MTSPARC_OVERRIDE:-@CC_MTSPARC@}
 AR_MTSPARC=${AR_MTSPARC_OVERRIDE:-@AR_MTSPARC@}
 RANLIB_MTSPARC=${RANLIB_MTSPARC_OVERRIDE:-@RANLIB_MTSPARC@}
 
+CC_MIPSEL=${CC_MIPSEL_OVERRIDE:-@CC_MIPSEL@}
+AR_MIPSEL=${AR_MIPSEL_OVERRIDE:-@AR_MIPSEL@}
+RANLIB_MIPSEL=${RANLIB_MIPSEL_OVERRIDE:-@RANLIB_MIPSEL@}
+
 PTHREAD_CC=${PTHREAD_CC_OVERRIDE:-@PTHREAD_CC@}
 PTHREAD_CFLAGS=${PTHREAD_CFLAGS_OVERRIDE:-@PTHREAD_CFLAGS@}
 PTHREAD_LIBS=${PTHREAD_LIBS_OVERRIDE:-@PTHREAD_LIBS@}
@@ -160,6 +164,8 @@ case $alias in
     mtsparc|mtsn) alias=spr-mtsn_hybrid-mtsparc-sim ;;
     mtsn_n)       alias=spr-mtsn_naked-mtsparc-sim ;;
     mtsn_s)       alias=spr-seq_naked-mtsparc-sim ;;
+
+    mipsel_s)     alias=spr-seq_naked-mipsel-sim ;;
 
     hrt)          alias=spr-hrt_hybrid-host-host-hrt ;;
     hrt_n)        alias=spr-hrt_naked-host-host-hrt ;;
@@ -298,7 +304,7 @@ esac
 # must occur before compiler selection below, so that ptl
 # overrides can change the optimization level.
 case $slc_dialect-$slc_arch in
-    spr-mt*)
+    spr-mt*|spr-mips*)
 	slc_cflags+=(-O2) ;;
     spr-host)
         slc_cflags+=(-O2) ;;
@@ -327,6 +333,11 @@ case $slc_dialect-$slc_arch in
 	slc_filter1=(cp)
 	slc_filter2=(cp)
 	;;
+    spr-mips*)
+	slc_compiler=($(eval "echo \${CC_$archvar:-$scu_helper} -std=gnu99"))
+	slc_filter1=(cp)
+	slc_filter2=("$python" "$spp_helper" "$slc_arch" "$slc_transbase" filter2)
+        ;;
     spr-*|spp-*)
         archcomp=$(eval "echo \${CC_$archvar:-\"\$scu_helper\"} -std=gnu99")
 	slc_compiler=("$python" "$spp_helper" "$slc_arch" "$slc_transbase" compile $archcomp)
@@ -384,6 +395,10 @@ case $slc_arch in
               slc_ar=($AR_MTSPARC)
               slc_ranlib=($RANLIB_MTSPARC)
 	      ;;
+    mipsel)
+              slc_ar=($AR_MIPSEL)
+              slc_ranlib=($RANLIB_MIPSEL)
+	      ;;
     *)
               slc_ar=("$scu_helper" archive)
               slc_ranlib=("$scu_helper" ranlib)
@@ -417,6 +432,10 @@ esac
 
 # Default underlying compiler
 case $slc_arch in
+    mips*)
+        # NB: fno-expensive-optimizations seems to be mandatory in gcc 4.7 to ensure delay slots are not filled
+        slc_cflags+=(-march=mips1 -fno-delayed-branch -mno-shared -mno-explicit-relocs -fno-math-errno -fno-trapping-math --param max-delay-slot-insn-search=0 --param max-delay-slot-live-search=0 -fno-expensive-optimizations -mno-check-zero-division)
+        ;;
     mtalpha)
         slc_cflags+=(-mcpu=21264a -fno-math-errno -fno-trapping-math)
         ;;
@@ -433,13 +452,23 @@ case $slc_arch in
     mtalpha)
         slc_ppflags+=(-D__mt_freestanding__ -D__WORDSIZE=64)
 	;;
-    mtsparc)
+    mtsparc|mips*)
         slc_ppflags+=(-D__mt_freestanding__ -D__WORDSIZE=32)
 	;;
 esac
 case $slc_arch-$slc_os in
     *-sim)
-	slc_ldflags+=(-Wl,-Ttext -Wl,0x1000000 -nostdlib)
+	slc_ldflags+=(-Wl,-Ttext -Wl,0x1000 -nostdlib)
+        case $slc_arch in
+            mtsparc|mips*)
+                # with 32-bit, place the heap far above the code, but below I/O.
+                slc_ldflags+=(-Wl,--section-start -Wl,MGOS_HEAPBASE=0x40000000)
+                ;;
+            mtalpha)
+                # with 64-bit the heap can collide with the I/O region. move it above.
+                slc_ldflags+=(-Wl,--section-start -Wl,MGOS_HEAPBASE=0x100000000)
+                ;;
+        esac
 	;;
     *-fpga)
         extra_f1flags+=(-x tls-via-gettid -x clear-local-regs)
@@ -479,6 +508,7 @@ case $slc_os in
         have_libmgos_a=
         have_libm_a=
         have_libc_a=
+        have_libgcc_a=
 	for d in $slc_libdir; do
             ldir=$d/$slc_arch-$slc_os
             if test -r $ldir; then
@@ -486,6 +516,7 @@ case $slc_os in
                 if test -r $ldir/libmgos.a; then have_libmgos_a=yes; fi
                 if test -r $ldir/libm.a; then have_libm_a=yes; fi
                 if test -r $ldir/libc.a; then have_libc_a=yes; fi
+                if test -r $ldir/libgcc.a; then have_libgcc_a=yes; fi
             fi
 
             ldir=$d/$slc_arch-$slc_os/$slc_variant
@@ -500,6 +531,7 @@ case $slc_os in
 	if test "$slc_use_libsl" != "no"; then slc_ldflags+=("-lsl"); fi
         if test "$slc_use_slrt" != "no"; then slc_ldflags+=("-lslc"); fi
         if test "$slc_use_main" != "no"; then slc_ldflags+=("-lslmain"); fi
+        if test "$slc_use_cstdlib" != "no" -a "$have_libgcc_a" = yes;  then slc_ldflags+=("-lgcc"); fi
 
         IFS=$save_IFS
 	;;
