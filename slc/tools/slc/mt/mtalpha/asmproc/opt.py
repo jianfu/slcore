@@ -137,6 +137,10 @@ def addswchll(fundata, items):
                     r1, r2, r3 = m.groups()
                     reads.append(r1)
                     reads.append(r2)
+                    
+                    if r3.startswith('$g'):
+                    	fundata['glch'] = 1
+                    
                     if re3wayll.match(content) is None:
                         shortwrites.append(r3)
                     else:
@@ -150,6 +154,8 @@ def addswchll(fundata, items):
                     r1 = m.group(1)
                     if w1way.match(content) is not None:
                         shortwrites.append(r1)
+                        if r1.startswith('$g'):
+                        	fundata['glch'] = 1
                     else:
                         reads.append(r1)
                     done = 1
@@ -161,6 +167,10 @@ def addswchll(fundata, items):
                 if m is not None:
                     r1, r2 = m.groups()
                     reads.append(r1)
+                    
+                    if r2.startswith('$g'):
+                    	fundata['glch'] = 1
+                    	
                     if content.startswith('sqrt') or content.startswith('sync') or content.startswith('allocate'):
                         longwrites.append(r2)
                     else:
@@ -173,7 +183,10 @@ def addswchll(fundata, items):
                 if m is not None:
                     r1, r2 = m.groups()
                     reads.append(r2)
-
+                    
+                    if r1.startswith('$g'):
+                    	fundata['glch'] = 1
+                    	
                     # Special case for loads from memory:
                     m2 = reld.match(content)
                     if m2 is not None:
@@ -197,6 +210,7 @@ def addswchll(fundata, items):
             
             test = 0
             q = set()
+
 
             # if one of the "maybe regs" is read from,
             # assume we are reading result from long latency.
@@ -232,7 +246,7 @@ def addswchll(fundata, items):
             yield (type, content, comment)
 
 
-_re_br = re.compile(r'(f?(beq|bne|bge|ble|bgt|blt|blbc)|br|jmp)\s')
+_re_br = re.compile(r'(f?(beq|bne|bge|ble|bgt|blt|blbc|blbs)|br|jmp)\s')
 _re_bsr = re.compile(r'(bsr|jsr|ret|jsr_coroutine)\s')
 def addswchbr(fundata, items):
     """
@@ -296,6 +310,74 @@ def fixemptyf(fundata, items):
         yield (type, content, comment)
 
 
+
+def findmtthread(fundata, items):
+	"""
+	Find the mt thread which contains '.registers'
+	and mark it.
+	"""
+	for (type, content, comment) in items:
+		if type == 'directive' and content.startswith('.registers'):
+			fundata['mtthread'] = 1
+		yield (type, content, comment)
+
+_re_share = re.compile(r'.*\$sf?\d.*')
+def retrydet(fundata, items):
+	"""
+	Detect whether a mt thread is retriable or not.
+	Conditions:
+	1. No shared;
+	2. No branch;
+	3. No family creation;
+	4. No global parameter is changed; (implemented in addswchll)
+	5. Count the store insns.
+	"""
+	mt = fundata.get('mtthread', 0)
+	glch = fundata.get('glch', 0)
+	retry = 1
+	storectr = 0
+	
+	if mt == 1:
+		for (type, content, comment) in items:
+			if type == 'other':
+				if _re_share.match(content) is not None:
+					retry = 0    # 1.dependent thread
+				if _re_br.match(content) is not None or _re_bsr.match(content) is not None:
+					retry = 0    # 2.branch within thread
+				if content.startswith('allocate') or content.startswith('cre') or content.startswith('sync'):
+					retry = 0    # 3.family creation within thread
+				if content.startswith('st'):
+					storectr = storectr + 1    #5.count store insns
+			yield (type, content, comment)
+		
+		fundata['retry'] = retry and (not glch)
+		fundata['stctr'] = storectr
+		
+	else:
+		for (type, content, comment) in items:
+			yield (type, content, comment)
+			
+
+def addretry(fundata, items):
+	"""
+	Insert .retry before .registers in mt thread.
+	"""
+	mt = fundata.get('mtthread', 0)
+	retry = fundata.get('retry', 0)
+	stctr = fundata.get('stctr', 0)
+	
+	if mt == 1:
+		for (type, content, comment) in items:
+			if type == 'directive' and content.startswith('.registers'):
+				yield ('directive', '.retry %d %d'%(retry,stctr), '')
+			yield (type, content, comment)
+	else:
+		for (type, content, comment) in items:
+			yield (type, content, comment)
+			
+
+	
+	
 _filter_begin = [common.reader, 
                  common.lexer, 
                  common.splitsemi, 
@@ -316,7 +398,11 @@ _filter_stages = [adjustmov,
                   prunenopend, 
                   protectend,
 
-                  rmswchdir
+                  rmswchdir,
+                  
+                  findmtthread,
+                  retrydet,
+                  addretry
                   ]
 
 _filter_end = [common.flattener,
