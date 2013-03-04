@@ -49,6 +49,10 @@ m4_define([[sl__forcewait]], [[[[""", {'type':'attr', 'name':'forcewait'}, r"""]
 m4_define([[sl__nowait]], [[[[""", {'type':'attr', 'name':'nowait'}, r"""]]]])
 m4_define([[sl__strategy]], [[[[""", {'type':'attr', 'name':'strategy', 'strategy':r""" $1 """}, r"""]]]])
 
+# FT
+m4_define([[sl__fd]], [[[[""", {'type':'attr', 'name':'faultdetection', 'faultdetection':r""" $1 """}, r"""]]]])
+##
+
 m4_define([[sl_def]],[[m4_dnl
 m4_pushdef([[return]],[[sl_end_thread]])m4_dnl
 m4_ifdef([[_sl_increate]],[[m4_fatal(missing sync after create)]])m4_dnl

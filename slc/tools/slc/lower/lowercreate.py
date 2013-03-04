@@ -18,7 +18,9 @@ class Create_2_LowCreate(DefaultVisitor):
         decls += cr.cvar_exitcode
         cr.cvar_fid = CVarDecl(loc = cr.loc, name = 'C$F$%s' % cr.label, ctype = 'long')
         decls += cr.cvar_fid
-
+        cr.cvar_rfid = CVarDecl(loc = cr.loc, name = 'C$RF$%s' % cr.label, ctype = 'long')
+        decls += cr.cvar_rfid
+		
         for item in ('place', 'start', 'limit', 'step', 'block'):
             var = CVarDecl(loc = cr.loc, name = 'C$%s$%s' % (item, cr.label), ctype = 'long')
 

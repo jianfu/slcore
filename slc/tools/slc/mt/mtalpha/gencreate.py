@@ -12,7 +12,12 @@ class Create_2_MTACreate(ScopedVisitor):
 
         adic = seta.lowcreate.callconv
         fidvar = seta.lowcreate.fidvar
-
+        rfidvar = seta.lowcreate.seta_rfidvar
+        fdattr = seta.lowcreate.seta_fdattr
+        
+        if fdattr is not None:
+        	fdname = fdattr.faultdetection
+        
         # print "looking up %s in %r" % (name, self.__args)
         assert name in adic
         
@@ -39,11 +44,18 @@ class Create_2_MTACreate(ScopedVisitor):
             else: rspec = 'rI'
             regnr = a['regnr']
             newbl.append(flatten(seta.loc, 
-                                ' __asm__ ("%(insn)s %%2, %%0, %(regnr)d\\t# MT: set %(cat)sarg"'
+                                ' __asm__ ("%(insn)s %%2, %%0, %(regnr)d\\t# MT: set %(cat)sarg of master start thread"'
                                  ' : "=r"(' % locals()) +
                          fidvar + ') : "0"(' + fidvar + 
                          '), "%s"((' % rspec + ctype + ')(' +
-                         assign + ')))')
+                         assign + ')));')
+            if (fdattr is not None) and (fdname == 'start'):
+            	newbl.append(flatten(seta.loc, 
+                                ' __asm__ ("%(insn)s %%2, %%0, %(regnr)d\\t# MT: set %(cat)sarg of redundant start thread"'
+                                 ' : "=r"(' % locals()) +
+                         rfidvar + ') : "0"(' + rfidvar + 
+                         '), "%s"((' % rspec + ctype + ')(' +
+                         assign + ')));')
         return newbl
                   
 
@@ -69,47 +81,70 @@ class Create_2_MTACreate(ScopedVisitor):
         block = CVarUse(decl = cr.cvar_block)
         
         usefvar = CVarUse(decl = fidvar)
+        
+        strategyuse = CVarUse(cr.cvar_strategy)
+        
+        rfidvar = CVarUse(decl = cr.cvar_rfid)
+        
+        fdattr = cr.extras.get_attr('faultdetection', None)
 
         if cr.extras.has_attr('exclusive'):
             allocinsn = 'allocate/x'
-            allocrinsn = 'allocate/rx'#ft
         elif lc.target_next is None:
             if cr.extras.has_attr('nowait'):
                 warn("this create may fail and no alternative is available", cr)
                 allocinsn = 'allocate'
-                allocrinsn = 'allocate/r'#ft
             else:
                 allocinsn = 'allocate/s'
-                allocrinsn = 'allocate/rs'#ft
         else:
             if cr.extras.has_attr('forcewait'):
                 allocinsn = 'allocate/s'
-                allocrinsn = 'allocate/rs'#ft
             else:
                 allocinsn = 'allocate'
-                allocrinsn = 'allocate/r'#ft
-
-        strategyuse = CVarUse(cr.cvar_strategy)
-
-        rfidvar = CVarDecl(loc = cr.loc, name = "C$RF$%s" % lbl, ctype = "long")
-        self.cur_scope.decls += rfidvar
-        rfidvar = CVarUse(decl = rfidvar)
-
-
-        newbl += (flatten(cr.loc,
-                          """__asm__ __volatile__("%(allocinsn)s %%3, %%2, %%0;" 
-                                                  "%(allocrinsn)s %%3, %%2, %%1;"
-                                                  "pair %%0, %%1;"
-                                                  "pair %%1, %%0;"
-                                                  "rmtwr %%1 \\t# MT: CREATE %(lbl)s" """ % locals()) + 
-                                                ' : "=r&"( ' + usefvar + '), "=r"( ' + rfidvar + ')' +
-												' : "rI"(' + strategyuse + '), "r"(' + CVarUse(decl = cr.cvar_place) + '));')
+        
+        if fdattr is None:
+        	newbl += (flatten(cr.loc,
+        				"""__asm__ __volatile__("%(allocinsn)s %%2, %%1, %%0\\t#MT: CREATE %(lbl)s" """ % locals()) +
+        										' : "=r"(' + usefvar + ')' +
+        										' : "rI"(' + strategyuse + '), "r"(' + CVarUse(decl = cr.cvar_place) + '));')
+        
+        else:
+        	fdname = fdattr.faultdetection
+        	
+        	if fdname == 'start':
+        		newbl += (flatten(cr.loc,
+        					"""__asm__ __volatile__("%(allocinsn)s %%4, %%2, %%0;"
+        											"%(allocinsn)s %%4, %%3, %%1;"
+        											"pair %%0, %%1;"
+        											"pair %%1, %%0\\t#MT: REDUNDANT CREATE START %(lbl)s" """ % locals()) +
+        											' : "=r&"(' + usefvar + '), "=r"(' + rfidvar + ')' +
+        											' : "rI"(' + strategyuse + '|' + '8' + '), "rI"(' + strategyuse + '|' + '12' + '), "r"(' + CVarUse(decl = cr.cvar_place) + '));')
+        
+        	elif fdname == 'redundancy':
+        		if allocinsn == 'allocate':
+        			allocrinsn = 'allocate/r'
+        		elif allocinsn == 'allocate/s':
+        			allocrinsn = 'allocate/rs'
+        		else:
+        			allocrinsn = 'allocate/rx'
+        			
+        		newbl += (flatten(cr.loc,
+        					"""__asm__ __volatile__("%(allocinsn)s %%3, %%2, %%0;"
+        											"%(allocrinsn)s %%3, %%2, %%1;"
+        											"pair %%0, %%1;"
+        											"pair %%1, %%0;"
+        											"rmtwr %%1\\t#MT: REDUNDANT CREATE SCOPE %(lbl)s" """ % locals()) +
+        											' : "=r&"(' + usefvar + '), "=r"(' + rfidvar + ')' +
+        											' : "rI"(' + strategyuse + '), "r"(' + CVarUse(decl = cr.cvar_place) + '));')
+        
+        
         
         if lc.target_next is not None:
-            newbl += (flatten(cr.loc, ' if (!__builtin_expect(!!(') + 
-                      usefvar + '), 1)) ' + 
-                      CGoto(target = lc.target_next)) + ';'
-
+        	newbl += (flatten(cr.loc, ' if (!__builtin_expect(!!(') + usefvar + '), 1)) ' + CGoto(target = lc.target_next)) + ';'
+        	if (fdattr is not None) and (fdname == 'start'):
+        		newbl += (flatten(cr.loc, ' if (!__builtin_expect(!!(') + rfidvar + '), 1)) ' + CGoto(target = lc.target_next)) + ';' 
+        	
+            
 
         # generate the function pointer
         if cr.funtype == cr.FUN_ID:
@@ -166,23 +201,52 @@ class Create_2_MTACreate(ScopedVisitor):
             mavar = CVarUse(decl = mavar)
             lc.mavar = mavar
 
-        # generate create
-        newbl += (flatten(cr.loc, 
-                         '__asm__ ("setstart %%0, %%2\\t# MT: CREATE %s"'
-                         ' : "=r"(' % lbl) +
-                  usefvar + ') : "0"(' + usefvar + '), "rI"(' + start + ')); ' +
-                  '__asm__ ("setlimit %%0, %%2\\t# MT: CREATE %s"' % lbl +
-                  ' : "=r"(' + usefvar + ') : "0"(' + usefvar  + '), "rI"(' + limit + ')); ' +
-                  '__asm__ ("setstep %%0, %%2\\t# MT: CREATE %s"' % lbl +
-                  ' : "=r"(' + usefvar + ') : "0"(' + usefvar + '), "rI"(' + step + ')); ' +
-                  '__asm__ ("setblock %%0, %%2\\t# MT: CREATE %s"' % lbl +
-                  ' : "=r"(' + usefvar + ') : "0"(' + usefvar + '), "rI"(' + block + ')); ' +
-                  '__asm__ __volatile__("crei %%0, 0(%%2)\\t# MT: CREATE %s"' % lbl +
-                  ' : "=r"(' + usefvar + ') : "0"(' + usefvar + '),' +
-                  '   "r"(' + funvar + ') : "memory");')
+        # generate create 
+        if (fdattr is not None) and (fdname == 'start'):
+        	newbl += (flatten(cr.loc, 
+        					'__asm__ ("setstart %%0, %%2\\t# MT: REDUNDANT CREATE START (master) %s"'
+        						' : "=r"(' % lbl) +
+        						usefvar + ') : "0"(' + usefvar + '), "rI"(' + start + ')); ' +
+        					'__asm__ ("setstart %%0, %%2\\t# MT: REDUNDANT CREATE START (redundant) %s"' % lbl +
+        						' : "=r"(' + rfidvar + ') : "0"(' + rfidvar  + '), "rI"(' + start + ')); ' +
+        					'__asm__ ("setlimit %%0, %%2\\t# MT: REDUNDANT CREATE START (master) %s"' % lbl +
+        						' : "=r"(' + usefvar + ') : "0"(' + usefvar  + '), "rI"(' + limit + ')); ' +
+        					'__asm__ ("setlimit %%0, %%2\\t# MT: REDUNDANT CREATE START (redundant) %s"' % lbl +
+        						' : "=r"(' + rfidvar + ') : "0"(' + rfidvar  + '), "rI"(' + limit + ')); ' +
+        					'__asm__ ("setstep %%0, %%2\\t# MT: REDUNDANT CREATE START (master) %s"' % lbl +
+        						' : "=r"(' + usefvar + ') : "0"(' + usefvar + '), "rI"(' + step + ')); ' +
+        					'__asm__ ("setstep %%0, %%2\\t# MT: REDUNDANT CREATE START (redundant) %s"' % lbl +
+        						' : "=r"(' + rfidvar + ') : "0"(' + rfidvar + '), "rI"(' + step + ')); ' +
+        					'__asm__ ("setblock %%0, %%2\\t# MT: REDUNDANT CREATE START (master) %s"' % lbl +
+        						' : "=r"(' + usefvar + ') : "0"(' + usefvar + '), "rI"(' + block + ')); ' +
+        					'__asm__ ("setblock %%0, %%2\\t# MT: REDUNDANT CREATE START (redundant) %s"' % lbl +
+        						' : "=r"(' + rfidvar + ') : "0"(' + rfidvar + '), "rI"(' + block + ')); ' +
+        					'__asm__ __volatile__("crei %%0, 0(%%2)\\t# MT: REDUNDANT CREATE START (master) %s"' % lbl +
+        						' : "=r"(' + usefvar + ') : "0"(' + usefvar + '),' +
+        						'   "r"(' + funvar + ') : "memory");' +
+        					'__asm__ __volatile__("crei %%0, 0(%%2)\\t# MT: REDUNDANT CREATE START (redundant) %s"' % lbl +
+        						' : "=r"(' + rfidvar + ') : "0"(' + rfidvar + '),' +
+        						'   "r"(' + funvar + ') : "memory");')
+
+        else: 
+        	newbl += (flatten(cr.loc, 
+                         	'__asm__ ("setstart %%0, %%2\\t# MT: CREATE %s"'
+                         		' : "=r"(' % lbl) +
+                  				usefvar + ') : "0"(' + usefvar + '), "rI"(' + start + ')); ' +
+                  			'__asm__ ("setlimit %%0, %%2\\t# MT: CREATE %s"' % lbl +
+                  				' : "=r"(' + usefvar + ') : "0"(' + usefvar  + '), "rI"(' + limit + ')); ' +
+                  			'__asm__ ("setstep %%0, %%2\\t# MT: CREATE %s"' % lbl +
+                  				' : "=r"(' + usefvar + ') : "0"(' + usefvar + '), "rI"(' + step + ')); ' +
+                  			'__asm__ ("setblock %%0, %%2\\t# MT: CREATE %s"' % lbl +
+                  				' : "=r"(' + usefvar + ') : "0"(' + usefvar + '), "rI"(' + block + ')); ' +
+                  			'__asm__ __volatile__("crei %%0, 0(%%2)\\t# MT: CREATE %s"' % lbl +
+                  				' : "=r"(' + usefvar + ') : "0"(' + usefvar + '),' +
+                  				'   "r"(' + funvar + ') : "memory");')
 
         lc.callconv = c['nargs']
         lc.fidvar = usefvar
+        lc.seta_rfidvar = rfidvar
+        lc.seta_fdattr = fdattr
 
         newbl += lc.body.accept(self)
 
@@ -195,11 +259,23 @@ class Create_2_MTACreate(ScopedVisitor):
         # access the memory as soon as putg completes.
         
         if c['gl_mem_offset'] is not None:
-            newbl += (flatten(cr.loc_end, 
-                             ' __asm__ ("wmb; putg %%2, %%0, %d\\t#MT: set offset for memargs"' 
-                             % c['gl_mem_offset']) + 
-                      ' : "=r"(' + usefvar + ') : "0"(' + usefvar + '),' +
-                      '   "r"(&' + mavar + '));')
+        	if (fdattr is not None) and (fdname == 'start'):
+        		newbl += (flatten(cr.loc_end, 
+                		        ' __asm__ ("wmb; putg %%2, %%0, %d\\t#MT: set offset for memargs (master)"' 
+                    	    	   	  % c['gl_mem_offset']) + 
+                      				' : "=r"(' + usefvar + ') : "0"(' + usefvar + '),' +
+                      				'   "r"(&' + mavar + '));' +
+                      			' __asm__ ("wmb; putg %%2, %%0, %d\\t#MT: set offset for memargs (redundant)"' 
+                    	       		  % c['gl_mem_offset'] + 
+                      				' : "=r"(' + rfidvar + ') : "0"(' + rfidvar + '),' +
+                      				'   "r"(&' + mavar + '));')
+
+        	else:
+        		newbl += (flatten(cr.loc_end,
+        						' __asm__ ("wmb; putg %%2, %%0, %d\\t#MT: set offset for memargs"' 
+        							% c['gl_mem_offset']) +
+        							' : "=r"(' + usefvar + ') : "0"(' + usefvar + '),' +
+        							'   "r"(&' + mavar + '));')
 
         # now, on to the sync.
         if cr.sync_type == 'normal':
@@ -243,7 +319,14 @@ class Create_2_MTACreate(ScopedVisitor):
         if cr.sync_type != 'spawn':
             # for normal sync and detach, release resources.
             # spawn will sync+release later.
-            newbl += (flatten(cr.loc_end, 
+            if (fdattr is not None) and (fdname == 'start'):
+            	newbl += (flatten(cr.loc_end, 
+								' __asm__ __volatile__("release %%0\\t#MT: SYNC (master) %s"' % lbl) +
+                      				' : : "r"(' + usefvar + '));' +
+                      			' __asm__ __volatile__("release %%0\\t#MT: SYNC (redundant) %s"' % lbl +
+                      				' : : "r"(' + rfidvar + '));')
+            else:
+            	newbl += (flatten(cr.loc_end, 
                               ' __asm__ __volatile__("release %%0\\t#MT: SYNC %s"' % lbl) +
                       ' : : "r"(' + usefvar + '));')
 
