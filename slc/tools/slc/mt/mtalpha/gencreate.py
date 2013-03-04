@@ -44,7 +44,7 @@ class Create_2_MTACreate(ScopedVisitor):
             else: rspec = 'rI'
             regnr = a['regnr']
             newbl.append(flatten(seta.loc, 
-                                ' __asm__ ("%(insn)s %%2, %%0, %(regnr)d\\t# MT: set %(cat)sarg of master start thread"'
+                                ' __asm__ ("%(insn)s %%2, %%0, %(regnr)d\\t# MT: set %(cat)sarg"'
                                  ' : "=r"(' % locals()) +
                          fidvar + ') : "0"(' + fidvar + 
                          '), "%s"((' % rspec + ctype + ')(' +
@@ -104,7 +104,7 @@ class Create_2_MTACreate(ScopedVisitor):
         
         if fdattr is None:
         	newbl += (flatten(cr.loc,
-        				"""__asm__ __volatile__("%(allocinsn)s %%2, %%1, %%0\\t#MT: CREATE %(lbl)s" """ % locals()) +
+        				"""__asm__ __volatile__("%(allocinsn)s %%2, %%1, %%0\\t# MT: CREATE %(lbl)s" """ % locals()) +
         										' : "=r"(' + usefvar + ')' +
         										' : "rI"(' + strategyuse + '), "r"(' + CVarUse(decl = cr.cvar_place) + '));')
         
@@ -116,7 +116,7 @@ class Create_2_MTACreate(ScopedVisitor):
         					"""__asm__ __volatile__("%(allocinsn)s %%4, %%2, %%0;"
         											"%(allocinsn)s %%4, %%3, %%1;"
         											"pair %%0, %%1;"
-        											"pair %%1, %%0\\t#MT: REDUNDANT CREATE START %(lbl)s" """ % locals()) +
+        											"pair %%1, %%0\\t #MT: REDUNDANT CREATE START %(lbl)s" """ % locals()) +
         											' : "=r&"(' + usefvar + '), "=r"(' + rfidvar + ')' +
         											' : "rI"(' + strategyuse + '|' + '8' + '), "rI"(' + strategyuse + '|' + '12' + '), "r"(' + CVarUse(decl = cr.cvar_place) + '));')
         
@@ -133,7 +133,7 @@ class Create_2_MTACreate(ScopedVisitor):
         											"%(allocrinsn)s %%3, %%2, %%1;"
         											"pair %%0, %%1;"
         											"pair %%1, %%0;"
-        											"rmtwr %%1\\t#MT: REDUNDANT CREATE SCOPE %(lbl)s" """ % locals()) +
+        											"rmtwr %%1\\t# MT: REDUNDANT CREATE SCOPE %(lbl)s" """ % locals()) +
         											' : "=r&"(' + usefvar + '), "=r"(' + rfidvar + ')' +
         											' : "rI"(' + strategyuse + '), "r"(' + CVarUse(decl = cr.cvar_place) + '));')
         

@@ -22,6 +22,30 @@ _start:
 	ldfp $l18
 
 	mov $l18, $l16 # set up frame pointer
+	clr $l8 # flush callee-save reg
+	clr $l9 # flush callee-save reg
+	clr $l10 # flush callee-save reg
+	clr $l11 # flush callee-save reg
+	clr $l12 # flush callee-save reg
+	clr $l13 # flush callee-save reg
+	fclr $lf11 # flush callee-save reg
+	fclr $lf12 # flush callee-save reg
+	fclr $lf13 # flush callee-save reg
+	fclr $lf14 # flush callee-save reg
+	fclr $lf15 # flush callee-save reg
+	fclr $lf16 # flush callee-save reg
+	fclr $lf17 # flush callee-save reg
+	fclr $lf18 # flush callee-save reg
+	fclr $lf3 # init FP return reg
+        clr $l2 # flush arg reg
+	clr $l3 # flush arg reg
+        clr $l4 # flush arg reg
+	fclr $lf5 # flush arg reg
+	fclr $lf6 # flush arg reg
+	fclr $lf7 # flush arg reg
+	fclr $lf8 # flush arg reg
+	fclr $lf9 # flush arg reg
+	fclr $lf10 # flush arg reg
 
 	# here $l7(a0), $l6(a1), $l5(a2) are set by the environment
 	# all 3 are used by the init function
@@ -38,78 +62,13 @@ _start:
         ldq $l5, environ($l5)     !gprellow
 
 	# call main()
-	ldq $l14, main($l17)  !literal
-	ldq $l13, __mt_main($l17) !literal
-	
-	mov 1, $l1
-	allocate $l1, 3, $l1
-    
-	mov 3, $l2
-	allocate $l2, 3, $l2
-	
-	crei $l1, 0($l13)
-	crei $l2, 0($l13)
-	
-	puts $l14, $l1, 0
-	putg $l5, $l1, 0
-	putg $l6, $l1, 1
-	putg $l7, $l1, 2
+	ldq $l14,main($l17) !literal!2
+	jsr $l15,($l14),main !lituse_jsr!2
+	ldgp $l17,0($l15)
 
-	puts $l14, $l2, 0
-	putg $l5, $l2, 0
-	putg $l6, $l2, 1
-	putg $l7, $l2, 2
-
-
-	sync $l1, $l3
-	mov $l3, $l3
-
-	sync $l2, $l4
-	mov $l4, $l4
-	
-	gets $l1, 0, $l3
-	mov $l3, $l3
-
-	gets $l2, 0, $l4
-	mov $l4, $l4
-	
-	detach $l1
-	detach $l2
-	
-	mov $l3, $l1
-	mov $l4, $l2
-	
-	
-	stq $l1, 0x278($31)
+        stq $l1, 0x278($31) # exit simulator with main's error code
 	end
 	.end _start
-
-
-	.align 4
-    .globl __mt_main
-    .ent __mt_main
-    .registers 3 1 19 0 0 19
-__mt_main:
-    .base $l17
-    ldpc $l14
-    ldah $l17, 0($l14) !gpdisp!2
-    lda $l17, 0($l17) !gpdisp!2
-        ldfp $l18                               
-        mov $31, $l16                           
-        lda $l18,-16($l18)                      
-        addl $31,$g0,$l7
-        mov $d0,$l14
-        mov $g1,$l6
-        mov $g2,$l5
-        jsr $l15,($l14),0
-        ldah $l17,0($l15)               !gpdisp!3
-        lda $l17,0($l17)                !gpdisp!3
-        mov $l1, $s0                            
-        end                                     
-        .end __mt_main
-
-
-
 
 	.section .rodata
 	.ascii "\0slr_runner:mtalpha-sim:\0"
@@ -155,4 +114,3 @@ __argv_ptr:
 	.align 3
 __argc:
 	.long 1
-
