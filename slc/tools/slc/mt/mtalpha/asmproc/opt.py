@@ -360,17 +360,18 @@ def retrydet(fundata, items):
 
 def addretry(fundata, items):
 	"""
-	Insert .retry before .registers in mt thread.
+	Insert .retry after .registers in mt thread.
 	"""
 	mt = fundata.get('mtthread', 0)
 	retry = fundata.get('retry', 0)
 	stctr = fundata.get('stctr', 0)
+	r = stctr * 2 + retry
 	
 	if mt == 1:
 		for (type, content, comment) in items:
-			if type == 'directive' and content.startswith('.registers'):
-				yield ('directive', '.retry %d %d'%(retry,stctr), '')
 			yield (type, content, comment)
+			if type == 'directive' and content.startswith('.registers'):
+				yield ('directive', '.long %d'%(r), '')
 	else:
 		for (type, content, comment) in items:
 			yield (type, content, comment)
