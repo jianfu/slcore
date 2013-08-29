@@ -371,7 +371,7 @@ def addretry(fundata, items):
 		for (type, content, comment) in items:
 			yield (type, content, comment)
 			if type == 'directive' and content.startswith('.registers'):
-				yield ('directive', '.long %d'%(r), '')
+				yield ('directive', '.long %d'%(r), '.retry %d %d'%(retry,stctr))
 	else:
 		for (type, content, comment) in items:
 			yield (type, content, comment)
