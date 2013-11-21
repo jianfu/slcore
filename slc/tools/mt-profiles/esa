@@ -1,27 +1,19 @@
-DESCRIPTION="4-core, ESAMemory, 400MHz cores, 1xDDR2-800"
+DESCRIPTION="4-core, ESAMemory, 1GHz cores, 1xDDR3-1600"
 
 simargs_base+=(-o NumProcessors=4)
-simargs_base+=(-o MemoryType=esa -o PriorityLevel=2)
-simargs_base+=(-o \*.DDR.Channel\*:Freq=400 -o CoreFreq=400 -o MemoryFreq=400 -o \*IOBUS\*:Freq=400)
+simargs_base+=(-o MemoryType=esa)
 
 #Level 1 cache set
-
-# 16KB size L1 cache
-simargs_base+=(-o CPU*.ICache:NumSets=64 -o CPU*.ICache:BankSelector=XORFOLD -o CPU*.DCache:NumSets=64)  
+#64KB
+simargs_base+=(-o CPU*.ICache:NumSets=256 -o CPU*.ICache:BankSelector=XORFOLD -o CPU*.DCache:NumSets=256)  
 
 #Level 2 cache set
-
-simargs_base+=(-o \*Memory:L2CacheAssociativity=4 -o \*Memory:L2CacheNumSets=1024)
+#1MB
+simargs_base+=(-o \*Memory:L2CacheAssociativity=4 -o \*Memory:L2CacheNumSets=4096)
 
 # DDR 
 simargs_base+=(-o \*Memory:NumInterfaces=1)
 simargs_base+=(-o \*NumChannels=1)
-# Timings for DDR2-800, in bus clock cycles, as per 
-simargs_base+=(-o \*.DDR.Channel\*:tCL=5)
-simargs_base+=(-o \*.DDR.Channel\*:tCL=5)
-simargs_base+=(-o \*.DDR.Channel\*:tRCD=5)
-simargs_base+=(-o \*.DDR.Channel\*:tRP=5)
-simargs_base+=(-o \*.DDR.Channel\*:tRAS=15)
-simargs_base+=(-o \*.DDR.Channel\*:tCWL=3)
-simargs_base+=(-o \*.DDR.Channel\*:tCCD=2)
 
+# CB
+simargs_base+=(-o CB*:IncomingBufferSize=256 -o CB*:OutgoingBufferSize=256)
